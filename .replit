@@ -29,6 +29,7 @@ args = "python stash_to_nfo.py --help"
 [[workflows.workflow]]
 name = "stash_nfo_converter"
 author = "agent"
+mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
