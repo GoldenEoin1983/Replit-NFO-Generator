@@ -1,0 +1,1 @@
+- [fnm Node on Replit PATH](fnm-node-path.md) — GUI features spawn npx with the bare default PATH; symlink fnm binaries into .pythonlibs/bin, not shell-init dirs.
