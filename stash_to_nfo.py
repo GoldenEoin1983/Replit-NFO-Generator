@@ -28,10 +28,26 @@ from parsers import StashParser
 from converters import StashToNfoConverter
 from nfo_generator import NfoGenerator
 from stash_api import StashApiClient
+from config import load_config, get_section, apply_config_defaults
+
+# Config file options this tool understands (see stash-tools.toml),
+# with the value type each one expects.
+_NFO_CONFIG_TYPES = {'pretty': bool, 'extract_images': bool,
+                     'overwrite': bool, 'encoding': str}
+_API_CONFIG_TYPES = {'stash_host': str, 'stash_port': str,
+                     'stash_scheme': str, 'stash_api_key': str,
+                     'stash_username': str, 'stash_password': str}
 
 
 def main():
     """Main entry point for the StashApp to NFO converter."""
+    # Step 0: peek at --config before building the real parser, so saved
+    # settings from stash-tools.toml can become the new defaults.
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--config", metavar="FILE")
+    pre_args, _ = pre.parse_known_args()
+    cfg = load_config(pre_args.config)
+
     parser = argparse.ArgumentParser(
         description="Convert StashApp JSON metadata files to Kodi/Jellyfin NFO format",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -143,6 +159,19 @@ Examples:
         help="StashApp password (use with username)"
     )
     
+    parser.add_argument(
+        "--config",
+        metavar="FILE",
+        help="Config file with saved defaults (default: stash-tools.toml if present)"
+    )
+
+    # Saved preferences from the config file become the new defaults;
+    # anything typed on the command line still overrides them.
+    apply_config_defaults(parser, get_section(cfg, 'nfo'),
+                          set(_NFO_CONFIG_TYPES), _NFO_CONFIG_TYPES, 'nfo')
+    apply_config_defaults(parser, get_section(cfg, 'stash_api'),
+                          set(_API_CONFIG_TYPES), _API_CONFIG_TYPES, 'stash_api')
+
     args = parser.parse_args()
     
     # Validate input arguments

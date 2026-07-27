@@ -22,6 +22,14 @@ import re
 import sys
 from pathlib import Path
 
+from config import load_config, get_section, apply_config_defaults
+
+# Config file options this tool understands (see stash-tools.toml),
+# with the value type each one expects.
+_CLEARLOGO_CONFIG_TYPES = {'font': str, 'color': str, 'size': str,
+                           'padding': int, 'filter_years': bool,
+                           'filter_actors': str}
+
 
 # ---------------------------------------------------------------------------
 # Font registry
@@ -280,6 +288,13 @@ def generate_clearlogo(title: str, font_key: str = "bebas",
 # ---------------------------------------------------------------------------
 def main():
     """Read command-line options, clean the title, and render the logo."""
+    # Step 0: peek at --config before building the real parser, so saved
+    # settings from stash-tools.toml can become the new defaults.
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--config", metavar="FILE")
+    pre_args, _ = pre.parse_known_args()
+    cfg = load_config(pre_args.config)
+
     parser = argparse.ArgumentParser(
         description="Generate a transparent clearlogo PNG from a media title.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -364,6 +379,18 @@ Examples:
         action="store_true",
         help="Print detailed progress information"
     )
+
+    parser.add_argument(
+        "--config",
+        metavar="FILE",
+        help="Config file with saved defaults (default: stash-tools.toml if present)"
+    )
+
+    # Saved preferences from the config file become the new defaults;
+    # anything typed on the command line still overrides them.
+    apply_config_defaults(parser, get_section(cfg, 'clearlogo'),
+                          set(_CLEARLOGO_CONFIG_TYPES),
+                          _CLEARLOGO_CONFIG_TYPES, 'clearlogo')
 
     args = parser.parse_args()
 

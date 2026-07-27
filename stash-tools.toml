@@ -1,0 +1,126 @@
+# =============================================================================
+#  stash-tools.toml — project-wide default settings
+# =============================================================================
+#
+#  Save your favourite options here once, and every tool run uses them
+#  automatically. Anything you type on the command line still wins over
+#  what's written here.
+#
+#  Priority order:   command line  >  this file  >  built-in defaults
+#
+#  Lines starting with # are comments. Remove the # in front of a setting
+#  to activate it. Format guide: https://toml.io/en/
+#
+#  Each tool reads only its own [section] below.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+#  FILE NAMING & OUTPUT LOCATIONS  —  [output]
+#  Shared naming preferences used by the gallery tool.
+# -----------------------------------------------------------------------------
+[output]
+# Folder where generated files are saved.
+# Default: same folder as the input video.
+#output = "./gallery"
+
+# Filename prefix for saved frames (e.g. "MyShow" -> MyShow_0001.jpg).
+# Default: the video's own filename.
+#prefix = "MyShow"
+
+
+# -----------------------------------------------------------------------------
+#  STILL IMAGE GALLERIES  —  [gallery]
+#  Used by: python video_gallery.py  (without --animate)
+# -----------------------------------------------------------------------------
+[gallery]
+# How many frames to grab, spread evenly across the video.
+# (Use EITHER count OR interval, not both.)
+#count = 24
+
+# ...or grab one frame every N seconds instead.
+#interval = 30.0
+
+# Image format for stills: "jpg", "png", or "webp"
+#format = "jpg"
+
+# Quality 1-100 for jpg/webp (ignored for png)
+#quality = 85
+
+# Resize output: "1920x1080" for exact pixels, or "50%" for half size
+#size = "50%"
+
+# Skip the very start and end of the video (percent, 0-100).
+# Handy for skipping intros and credits.
+#start = 5.0
+#end = 95.0
+
+
+# -----------------------------------------------------------------------------
+#  ANIMATED GIF / WEBP  —  [animation]
+#  Used by: python video_gallery.py --animate
+#  These are read IN ADDITION to [gallery] (count, size, quality, etc.)
+# -----------------------------------------------------------------------------
+[animation]
+# Animated format: "gif" or "webp" (webp = smaller files, better colour)
+#format = "webp"
+
+# How long each frame stays on screen, in milliseconds
+#frame_duration = 500
+
+# How many times the animation repeats. 0 = loop forever
+#loop = 0
+
+
+# -----------------------------------------------------------------------------
+#  CLEARLOGO STYLE  —  [clearlogo]
+#  Used by: python clearlogo.py
+# -----------------------------------------------------------------------------
+[clearlogo]
+# Font: "bebas", "anton", or "montserrat"
+#font = "bebas"
+
+# Text colour: "white" or "black"
+#color = "white"
+
+# Canvas size in pixels, WxH (800x310 is the community standard)
+#size = "800x310"
+
+# Breathing room around the text, in pixels
+#padding = 30
+
+# Always strip years like "(2020)" out of titles
+#filter_years = true
+
+# Actor names to always remove from titles (comma-separated)
+#filter_actors = "Name One,Name Two"
+
+
+# -----------------------------------------------------------------------------
+#  NFO CONVERSION  —  [nfo]
+#  Used by: python stash_to_nfo.py
+# -----------------------------------------------------------------------------
+[nfo]
+# Indent the XML so it's easy to read
+#pretty = true
+
+# Also save any images embedded in the JSON (poster.jpg, fanart.jpg...)
+#extract_images = true
+
+# Replace existing NFO files without asking
+#overwrite = false
+
+# Text encoding of the NFO file
+#encoding = "utf-8"
+
+
+# -----------------------------------------------------------------------------
+#  STASHAPP SERVER CONNECTION  —  [stash_api]
+#  Used by: python stash_to_nfo.py --stash-id / --search
+#  NOTE: avoid saving passwords here if you share this project.
+# -----------------------------------------------------------------------------
+[stash_api]
+#stash_host = "localhost"
+#stash_port = "9999"
+#stash_scheme = "http"
+#stash_api_key = ""

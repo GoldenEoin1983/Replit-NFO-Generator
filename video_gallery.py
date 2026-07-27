@@ -25,6 +25,17 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
+from config import (apply_config_defaults, check_config_types, get_section,
+                    load_config)
+
+# Config file options this tool understands (see stash-tools.toml),
+# with the value type each one expects.
+_OUTPUT_CONFIG_TYPES = {'output': str, 'prefix': str}
+_GALLERY_CONFIG_TYPES = {'count': int, 'interval': float, 'format': str,
+                         'quality': int, 'size': str,
+                         'start': float, 'end': float}
+_ANIMATION_CONFIG_TYPES = {'format': str, 'frame_duration': int, 'loop': int}
+
 
 def parse_size(size_str: str):
     """
@@ -353,6 +364,14 @@ class VideoGalleryGenerator:
 # ----------------------------------------------------------------------
 def main():
     """Read command-line options, validate them, and run the generator."""
+    # Step 0: peek at --config (and --animate) before building the real
+    # parser, so saved settings from stash-tools.toml become the defaults.
+    pre = argparse.ArgumentParser(add_help=False)
+    pre.add_argument("--config", metavar="FILE")
+    pre.add_argument("--animate", action="store_true")
+    pre_args, _ = pre.parse_known_args()
+    cfg = load_config(pre_args.config)
+
     parser = argparse.ArgumentParser(
         description=(
             "Extract frames from a video file and save them as still images "
@@ -390,7 +409,9 @@ Examples:
     parser.add_argument("video", help="Path to the input video file")
 
     # --- Sampling: count OR interval ---
-    sample_group = parser.add_mutually_exclusive_group(required=True)
+    # (Not marked 'required' here because the config file may supply one;
+    #  we check after parsing that at least one is set.)
+    sample_group = parser.add_mutually_exclusive_group()
     sample_group.add_argument(
         "--count", "-n", type=int, metavar="N",
         help="Number of frames to extract, spread evenly across the chosen range"
@@ -473,8 +494,50 @@ Examples:
         "--verbose", "-v", action="store_true",
         help="Print detailed progress information"
     )
+    out_group.add_argument(
+        "--config", metavar="FILE",
+        help="Config file with saved defaults (default: stash-tools.toml if present)"
+    )
+
+    # --- Apply saved preferences from the config file ---
+    # Config values become the new defaults; command-line options still win.
+    # NOTE: count/interval are deliberately NOT applied as defaults here.
+    # They're a "pick one" pair, so we only fall back to the config when
+    # the command line supplies neither (handled just after parsing).
+    gallery_cfg = check_config_types(get_section(cfg, 'gallery'),
+                                     _GALLERY_CONFIG_TYPES, 'gallery')
+    sampling_cfg = {k: gallery_cfg.pop(k) for k in ('count', 'interval')
+                    if k in gallery_cfg}
+    apply_config_defaults(parser, get_section(cfg, 'output'),
+                          set(_OUTPUT_CONFIG_TYPES),
+                          _OUTPUT_CONFIG_TYPES, 'output')
+    apply_config_defaults(parser, gallery_cfg, set(_GALLERY_CONFIG_TYPES))
+    if pre_args.animate:
+        # Animation settings only kick in when --animate is used
+        apply_config_defaults(parser, get_section(cfg, 'animation'),
+                              set(_ANIMATION_CONFIG_TYPES),
+                              _ANIMATION_CONFIG_TYPES, 'animation')
 
     args = parser.parse_args()
+
+    # Sampling fallback: if the command line gave neither --count nor
+    # --interval, use the config (count wins if both are saved there).
+    if args.count is None and args.interval is None:
+        if 'count' in sampling_cfg:
+            args.count = sampling_cfg['count']
+        elif 'interval' in sampling_cfg:
+            args.interval = sampling_cfg['interval']
+        else:
+            parser.error("either --count or --interval is required "
+                         "(on the command line or in the config file)")
+
+    # Size from the config file arrives as text (e.g. "50%"); convert it
+    # the same way a command-line --size value would be.
+    if isinstance(args.size, str):
+        try:
+            args.size = parse_size(args.size)
+        except argparse.ArgumentTypeError as e:
+            parser.error(f"config 'size': {e}")
 
     # --- Validation ---
     if not 1 <= args.quality <= 100:

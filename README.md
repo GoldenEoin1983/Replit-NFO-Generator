@@ -23,6 +23,46 @@ pip install stashapp-tools opencv-python-headless Pillow
 
 ---
 
+## Project Config File — `stash-tools.toml`
+
+Once you've made a few galleries, GIFs, or clearlogos the way you like, you can save those settings permanently instead of retyping them. All three tools automatically read a file called **`stash-tools.toml`** in the project folder.
+
+**Priority order:** command line > config file > built-in defaults. Anything you type on the command line always wins.
+
+The included `stash-tools.toml` documents every available setting, grouped into clearly separated sections:
+
+| Section | Used by | Controls |
+|---|---|---|
+| `[output]` | `video_gallery.py` | Output folder and filename prefix |
+| `[gallery]` | `video_gallery.py` | Frame count/interval, format, quality, size, start/end range |
+| `[animation]` | `video_gallery.py --animate` | Animated format, frame duration, looping |
+| `[clearlogo]` | `clearlogo.py` | Font, colour, canvas size, padding, title filtering |
+| `[nfo]` | `stash_to_nfo.py` | Pretty-printing, image extraction, overwrite, encoding |
+| `[stash_api]` | `stash_to_nfo.py` | StashApp server host, port, scheme, API key |
+
+Every setting ships commented out (a `#` in front). Remove the `#` to activate one:
+
+```toml
+[gallery]
+count = 24
+format = "webp"
+size = "50%"
+
+[clearlogo]
+font = "anton"
+filter_years = true
+```
+
+With that saved, `python video_gallery.py movie.mp4` needs no extra options — and `python video_gallery.py movie.mp4 --count 10` still overrides the saved count for that one run.
+
+You can also keep several configs (say, one per show) and pick one with `--config`:
+
+```bash
+python video_gallery.py movie.mp4 --config myshow.toml
+```
+
+---
+
 ## NFO Converter — `stash_to_nfo.py`
 
 Converts StashApp metadata to Kodi/Jellyfin NFO files. The output follows the Kodi movie NFO layout [[K4]](#references), which Jellyfin also reads [[J3]](#references).
