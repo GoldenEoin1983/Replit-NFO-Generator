@@ -1,5 +1,15 @@
 """
 StashApp API client for direct data retrieval.
+
+WHAT THIS FILE DOES
+-------------------
+Instead of exporting JSON files by hand, this module talks directly to a
+running StashApp server over its GraphQL API. GraphQL is a query language
+where you describe exactly which fields you want back.
+
+The heavy lifting is done by the official 'stashapp-tools' library
+(StashInterface); this class wraps it with friendlier error messages and
+a few custom queries the library doesn't cover.
 """
 
 import sys

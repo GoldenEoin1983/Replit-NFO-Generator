@@ -1,8 +1,23 @@
 #!/usr/bin/env python3
 """
 Video Gallery Generator
+
 Extracts frames from a video file and saves them as individual images
-or combines them into an animated GIF or animated WebP.
+or combines them into an animated GIF or animated WebP preview.
+
+HOW IT WORKS
+------------
+1. OpenCV (cv2) opens the video and jumps to specific timestamps
+2. Each grabbed frame is converted to a Pillow image (optionally resized)
+3. Frames are saved as separate files (generate) or stitched into one
+   animated file (animate)
+
+You choose WHICH frames with either:
+- --count N     -> N frames spread evenly across the chosen range, or
+- --interval S  -> one frame every S seconds
+
+and WHERE to sample with percentages (--start/--end) or exact
+timestamps (--start-time/--end-time).
 """
 
 import argparse
@@ -67,6 +82,7 @@ def parse_time(time_str: str) -> float:
 
 
 def clamp(value, lo, hi):
+    """Keep a value within the range [lo, hi]."""
     return max(lo, min(hi, value))
 
 
@@ -101,10 +117,12 @@ class VideoGalleryGenerator:
         self.verbose = verbose
 
     def _log(self, msg: str):
+        """Print progress messages, but only when --verbose is on."""
         if self.verbose:
             print(msg)
 
     def _open_video(self):
+        """Open the video with OpenCV; returns (capture object, cv2 module)."""
         try:
             import cv2
         except ImportError:
@@ -120,6 +138,13 @@ class VideoGalleryGenerator:
                           count, interval,
                           start_percent, end_percent,
                           start_time, end_time):
+        """
+        Work out the exact timestamps (in seconds) to grab frames at.
+
+        Exact times (--start-time/--end-time) win over percentages;
+        then either --count spreads frames evenly across the range, or
+        --interval steps through it in fixed jumps.
+        """
         fps = cap.get(cv2.CAP_PROP_FPS)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         duration = total_frames / fps if fps > 0 else 0
@@ -158,6 +183,11 @@ class VideoGalleryGenerator:
         return fps, total_frames, timestamps
 
     def _read_frame(self, cap, cv2, ts, fps, total_frames, idx):
+        """
+        Jump to timestamp `ts`, grab that frame, and return it as a
+        Pillow image (resized if --size was given). Returns None if the
+        frame couldn't be read.
+        """
         from PIL import Image
         frame_num = clamp(int(ts * fps), 0, total_frames - 1)
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
@@ -322,6 +352,7 @@ class VideoGalleryGenerator:
 # CLI
 # ----------------------------------------------------------------------
 def main():
+    """Read command-line options, validate them, and run the generator."""
     parser = argparse.ArgumentParser(
         description=(
             "Extract frames from a video file and save them as still images "

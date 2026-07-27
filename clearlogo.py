@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
 """
 ClearLogo Generator
-Creates a transparent-background text logo (clearlogo) from a media title.
-Supports three fonts, white or black text, and optional title cleaning
-to strip years/dates and performer names.
+
+Creates a transparent-background text logo (a "clearlogo") from a media
+title. A clearlogo is the artwork media centers overlay on top of fanart
+so the title appears as styled text rather than a plain caption.
+See: https://kodi.wiki/view/Artwork_types#clearlogo
+
+HOW IT WORKS
+------------
+1. clean_title()         - optionally strips years and actor names
+2. _best_wrap()          - finds the biggest font size that fits the canvas,
+                           trying both one-line and two-line layouts
+3. generate_clearlogo()  - draws the text centred on a transparent PNG
+
+Supports three fonts, white or black text, and a configurable canvas size.
 """
 
 import argparse
@@ -268,6 +279,7 @@ def generate_clearlogo(title: str, font_key: str = "bebas",
 # CLI
 # ---------------------------------------------------------------------------
 def main():
+    """Read command-line options, clean the title, and render the logo."""
     parser = argparse.ArgumentParser(
         description="Generate a transparent clearlogo PNG from a media title.",
         formatter_class=argparse.RawDescriptionHelpFormatter,

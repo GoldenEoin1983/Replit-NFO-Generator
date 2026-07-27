@@ -25,7 +25,7 @@ pip install stashapp-tools opencv-python-headless Pillow
 
 ## NFO Converter — `stash_to_nfo.py`
 
-Converts StashApp metadata to Kodi/Jellyfin NFO files.
+Converts StashApp metadata to Kodi/Jellyfin NFO files. The output follows the Kodi movie NFO layout [[K4]](#references), which Jellyfin also reads [[J3]](#references).
 
 ### Basic Usage
 
@@ -132,9 +132,11 @@ python video_gallery.py movie.mp4 --count 10 --format gif --animate --start-time
 
 ## Animated Images — Kodi & Jellyfin Guide
 
+> Sources for the statements in this section are listed under [References](#references) below. If a Kodi or Jellyfin update changes any of this behaviour, check those links first.
+
 ### Jellyfin
 
-Jellyfin has **full native support** for both animated GIF and animated WebP across all official clients (Web, Android, Desktop). Animated images work as posters, backdrops, and thumbnails with no extra configuration needed.
+Jellyfin has **full native support** for both animated GIF and animated WebP across all official clients (Web, Android, Desktop). Animated images work as posters, backdrops, and thumbnails with no extra configuration needed. [[J1]](#references)
 
 **Recommended for Jellyfin:** Animated WebP — better quality and much smaller file sizes than GIF.
 
@@ -142,9 +144,9 @@ Jellyfin has **full native support** for both animated GIF and animated WebP acr
 
 Kodi supports animated GIF and animated WebP, but behaviour depends on which **skin** you are using.
 
-- **Animated GIF**: Supported in the core engine, but many skins (including the default *Estuary*) only display the first frame as a static image in list views. Animated playback is more reliable in full-screen fanart views.
-- **Animated WebP**: Supported from **Kodi 19 (Matrix)** onwards. Requires skin support for the animation to play. Kodi 20 (Nexus) and later have the most reliable WebP handling.
-- **Older Kodi (pre-19)**: WebP is not supported. Use GIF or static images instead.
+- **Animated GIF**: Supported in the core engine, but many skins (including the default *Estuary*) only display the first frame as a static image in list views. Animated playback is more reliable in full-screen fanart views. [[K1]](#references)
+- **Animated WebP**: Supported from **Kodi 19 (Matrix)** onwards. Requires skin support for the animation to play. Kodi 20 (Nexus) and later have the most reliable WebP handling. [[K2]](#references)
+- **Older Kodi (pre-19)**: WebP is not supported. Use GIF or static images instead. [[K2]](#references)
 
 **Recommended for Kodi:** Keep animated images as supplementary fanart rather than primary posters, to ensure compatibility across skins and devices.
 
@@ -162,7 +164,7 @@ Kodi supports animated GIF and animated WebP, but behaviour depends on which **s
 
 ### Size Recommendations
 
-These sizes match the standard naming conventions expected by Kodi and Jellyfin:
+These sizes match the artwork standards used by the Kodi and Jellyfin communities (originating from the fanart.tv / TheMovieDB guidelines): [[K3]](#references) [[J2]](#references)
 
 | Artwork type | Recommended size | Aspect ratio | Notes |
 |---|---|---|---|
@@ -212,3 +214,35 @@ The number of frames directly affects file size and how smooth the animation loo
 - Large animated files can make your media centre UI feel sluggish, particularly on embedded or older devices.
 - If you experience slowdowns, reduce `--size` first, then reduce `--count`.
 - For Kodi, consider placing animated images in the `extrafanart` folder as supplementary artwork rather than replacing the primary poster, so the library still loads quickly.
+
+---
+
+## References
+
+Fact-check sources for the Kodi/Jellyfin statements in this document. If a server update changes behaviour, these are the pages to re-check.
+
+### Kodi sources
+
+| Ref | Topic | Link |
+|---|---|---|
+| K1 | Artwork types & how skins display them | https://kodi.wiki/view/Artwork_types |
+| K2 | Kodi 19 (Matrix) changelog — image handling / WebP era | https://kodi.wiki/view/Kodi_v19_(Matrix)_changelog |
+| K3 | Artwork size guidelines | https://kodi.wiki/view/Artwork_types#Artwork_size |
+| K4 | Movie NFO file specification | https://kodi.wiki/view/NFO_files/Movies |
+| K5 | NFO files overview (all types) | https://kodi.wiki/view/NFO_files |
+
+### Jellyfin sources
+
+| Ref | Topic | Link |
+|---|---|---|
+| J1 | Image/artwork handling in Jellyfin | https://jellyfin.org/docs/general/server/media/movies/ |
+| J2 | Jellyfin metadata & image documentation | https://jellyfin.org/docs/general/server/metadata/ |
+| J3 | NFO metadata support in Jellyfin | https://jellyfin.org/docs/general/server/metadata/nfo/ |
+
+### Related standards
+
+| Topic | Link |
+|---|---|
+| fanart.tv artwork guidelines (community sizing standards) | https://fanart.tv/artwork-guidelines/ |
+| StashApp documentation | https://docs.stashapp.cc/ |
+| Animated WebP format specification | https://developers.google.com/speed/webp/docs/riff_container |

@@ -1,5 +1,19 @@
 """
-NFO XML file generator for Kodi/Jellyfin compatibility.
+NFO XML file generator for Kodi/Jellyfin.
+
+WHAT THIS FILE DOES
+-------------------
+This is the last step in the conversion pipeline. It takes the cleaned-up
+dictionary produced by converters.py and turns it into an actual NFO file
+(an XML text file that media centers read for titles, plots, actors, etc.).
+
+Reference formats this output follows:
+- Kodi movie NFO:   https://kodi.wiki/view/NFO_files/Movies
+- Jellyfin NFO:     https://jellyfin.org/docs/general/server/metadata/nfo/
+
+Two document shapes are produced:
+- <movie> ... </movie>  for scenes and galleries
+- <actor> ... </actor>  for performers
 """
 
 import xml.etree.ElementTree as ET
@@ -8,70 +22,61 @@ from xml.dom import minidom
 
 
 class NfoGenerator:
-    """Generates NFO XML files from converted data."""
-    
+    """Turns converted metadata dictionaries into NFO XML text."""
+
     def __init__(self, encoding: str = 'utf-8', pretty_print: bool = True):
         """
-        Initialize the NFO generator.
-        
+        Set up the generator.
+
         Args:
-            encoding: XML encoding (default: utf-8)
-            pretty_print: Whether to format XML with indentation
+            encoding: Text encoding written into the XML header (default: utf-8)
+            pretty_print: If True, indent the XML so humans can read it easily
         """
         self.encoding = encoding
         self.pretty_print = pretty_print
-    
+
     def generate(self, nfo_data: dict[str, Any], data_type: str) -> str:
         """
-        Generate NFO XML from converted data.
-        
+        Build the NFO XML string for the given data type.
+
         Args:
-            nfo_data: Converted NFO data structure
-            data_type: Type of data ('scene', 'performer', 'gallery')
-            
+            nfo_data: Converted NFO data (from StashToNfoConverter)
+            data_type: 'scene', 'performer', or 'gallery'
+
         Returns:
-            XML string in NFO format
+            Complete XML document as a string
         """
-        if data_type in ['scene', 'gallery']:
+        # Scenes and galleries both use Kodi's <movie> layout;
+        # performers use the <actor> layout.
+        if data_type in ('scene', 'gallery'):
             return self._generate_movie_nfo(nfo_data)
-        elif data_type == 'performer':
+        if data_type == 'performer':
             return self._generate_actor_nfo(nfo_data)
-        else:
-            raise ValueError(f"Unsupported data type: {data_type}")
-    
+        raise ValueError(f"Unsupported data type: {data_type}")
+
     def _generate_movie_nfo(self, nfo_data: dict[str, Any]) -> str:
-        """Generate movie NFO XML."""
+        """
+        Build a <movie> NFO document (used for scenes and galleries).
+
+        Tag names follow the Kodi movie NFO specification:
+        https://kodi.wiki/view/NFO_files/Movies
+        """
         root = ET.Element('movie')
-        
-        # Basic metadata
+
+        # Always-included basics (empty string if missing)
         self._add_text_element(root, 'title', nfo_data.get('title', ''))
         self._add_text_element(root, 'originaltitle', nfo_data.get('originaltitle', ''))
         self._add_text_element(root, 'plot', nfo_data.get('plot', ''))
-        
-        # Rating
-        userrating = nfo_data.get('userrating', 0)
-        self._add_text_element(root, 'userrating', str(userrating))
-        
-        # Date information
-        premiered = nfo_data.get('premiered')
-        if premiered:
-            self._add_text_element(root, 'premiered', premiered)
-        
-        year = nfo_data.get('year')
-        if year:
-            self._add_text_element(root, 'year', str(year))
-        
-        # Studio
-        studio = nfo_data.get('studio')
-        if studio:
-            self._add_text_element(root, 'studio', studio)
-        
-        # Runtime
-        runtime = nfo_data.get('runtime')
-        if runtime:
-            self._add_text_element(root, 'runtime', str(runtime))
-        
-        # Unique ID
+        self._add_text_element(root, 'userrating', str(nfo_data.get('userrating', 0)))
+
+        # Optional simple tags - only written when we actually have a value
+        for tag in ('premiered', 'year', 'studio', 'runtime'):
+            value = nfo_data.get(tag)
+            if value:
+                self._add_text_element(root, tag, str(value))
+
+        # <uniqueid> lets Kodi/Jellyfin tell items apart even if titles match.
+        # See: https://kodi.wiki/view/NFO_files/Movies (uniqueid section)
         uniqueid_data = nfo_data.get('uniqueid')
         if uniqueid_data and isinstance(uniqueid_data, dict):
             uniqueid_elem = ET.SubElement(root, 'uniqueid')
@@ -79,116 +84,89 @@ class NfoGenerator:
             if uniqueid_data.get('default'):
                 uniqueid_elem.set('default', 'true')
             uniqueid_elem.text = uniqueid_data.get('value', '')
-        
-        # Genres
-        genres = nfo_data.get('genres', [])
+
+        # StashApp tags are written as both <genre> and <tag> so they show
+        # up in either filter menu of the media center.
+        genres = [g for g in nfo_data.get('genres', []) if g]
         for genre in genres:
-            if genre:  # Skip empty genres
-                self._add_text_element(root, 'genre', genre)
-        
-        # Tags (same as genres for NFO format)
+            self._add_text_element(root, 'genre', genre)
         for genre in genres:
-            if genre:
-                self._add_text_element(root, 'tag', genre)
-        
-        # Actors
-        actors = nfo_data.get('actors', [])
-        for actor_data in actors:
-            if isinstance(actor_data, dict):
-                actor_elem = ET.SubElement(root, 'actor')
-                
-                name = actor_data.get('name', '')
-                if name:
-                    self._add_text_element(actor_elem, 'name', name)
-                
-                role = actor_data.get('role', '')
-                if role:
-                    self._add_text_element(actor_elem, 'role', role)
-                
-                order = actor_data.get('order')
-                if order is not None:
-                    self._add_text_element(actor_elem, 'order', str(order))
-        
+            self._add_text_element(root, 'tag', genre)
+
+        # Each performer becomes an <actor> block with name/role/order
+        for actor_data in nfo_data.get('actors', []):
+            if not isinstance(actor_data, dict):
+                continue
+            actor_elem = ET.SubElement(root, 'actor')
+            if actor_data.get('name'):
+                self._add_text_element(actor_elem, 'name', actor_data['name'])
+            if actor_data.get('role'):
+                self._add_text_element(actor_elem, 'role', actor_data['role'])
+            if actor_data.get('order') is not None:
+                self._add_text_element(actor_elem, 'order', str(actor_data['order']))
+
         return self._format_xml(root)
-    
+
     def _generate_actor_nfo(self, nfo_data: dict[str, Any]) -> str:
-        """Generate actor/performer NFO XML."""
+        """
+        Build an <actor> NFO document for a performer.
+
+        Kodi and Jellyfin read actor metadata primarily from the media NFO,
+        but a standalone actor NFO stores richer detail alongside the
+        performer's image folder.
+        """
         root = ET.Element('actor')
-        
-        # Basic information
+
         self._add_text_element(root, 'name', nfo_data.get('name', ''))
-        
-        biography = nfo_data.get('biography', '')
-        if biography:
-            self._add_text_element(root, 'biography', biography)
-        
-        birthdate = nfo_data.get('birthdate')
-        if birthdate:
-            self._add_text_element(root, 'birthdate', birthdate)
-        
-        # Additional details as custom elements
-        details = nfo_data.get('details', {})
-        if isinstance(details, dict):
-            for key, value in details.items():
-                if value:  # Only add non-empty values
-                    if isinstance(value, list):
-                        for item in value:
-                            if item:
-                                self._add_text_element(root, key, str(item))
-                    else:
-                        self._add_text_element(root, key, str(value))
-        
-        # Social media information
-        social = nfo_data.get('social', {})
-        if isinstance(social, dict):
-            for key, value in social.items():
-                if value:
-                    self._add_text_element(root, key, str(value))
-        
+
+        # Optional simple fields
+        for tag in ('biography', 'birthdate'):
+            value = nfo_data.get(tag)
+            if value:
+                self._add_text_element(root, tag, value)
+
+        # Extra details (gender, country, aliases...) and social links are
+        # written as custom elements - harmless to media centers that don't
+        # understand them, useful for other tools that do.
+        for section in ('details', 'social'):
+            data = nfo_data.get(section, {})
+            if not isinstance(data, dict):
+                continue
+            for key, value in data.items():
+                if not value:
+                    continue  # skip empty values to keep the file tidy
+                # Lists (e.g. aliases) become one element per item
+                items = value if isinstance(value, list) else [value]
+                for item in items:
+                    if item:
+                        self._add_text_element(root, key, str(item))
+
         return self._format_xml(root)
-    
+
     def _add_text_element(self, parent: ET.Element, tag: str, text: str) -> ET.Element:
-        """
-        Add a text element to the parent.
-        
-        Args:
-            parent: Parent XML element
-            tag: Tag name
-            text: Text content
-            
-        Returns:
-            Created element
-        """
+        """Create a child element like <tag>text</tag> under the parent."""
         elem = ET.SubElement(parent, tag)
         elem.text = text if text else ''
         return elem
-    
+
     def _format_xml(self, root: ET.Element) -> str:
         """
-        Format XML element as string with proper encoding and formatting.
-        
-        Args:
-            root: Root XML element
-            
-        Returns:
-            Formatted XML string
+        Convert the XML tree to a final string, optionally pretty-printed,
+        and prepend the XML declaration header.
         """
-        # Convert to string
         xml_str = ET.tostring(root, encoding='unicode')
-        
+
         if self.pretty_print:
-            # Use minidom for pretty printing
+            # minidom re-parses the XML and adds indentation
             dom = minidom.parseString(xml_str)
             pretty_xml = dom.documentElement.toprettyxml(indent='  ')
-            
-            # Remove empty lines and fix formatting
+            # minidom leaves blank lines behind - strip them out
             lines = [line for line in pretty_xml.split('\n') if line.strip()]
             xml_str = '\n'.join(lines)
-        
-        # Add XML declaration
+
+        # The declaration tells media centers the file's encoding.
+        # standalone="yes" means no external files are needed to read it.
         xml_declaration = f'<?xml version="1.0" encoding="{self.encoding}" standalone="yes" ?>'
-        
-        if self.pretty_print:
-            return f"{xml_declaration}\n{xml_str}"
-        else:
-            return f"{xml_declaration}{xml_str}"
+
+        separator = '\n' if self.pretty_print else ''
+        return f"{xml_declaration}{separator}{xml_str}"

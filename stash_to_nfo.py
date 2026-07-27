@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 """
-StashApp to NFO Converter
-Converts StashApp JSON metadata files into Kodi/Jellyfin compatible NFO files.
+StashApp to NFO Converter (main command-line program)
+
+Converts StashApp metadata into Kodi/Jellyfin compatible NFO files.
+
+HOW THE PIECES FIT TOGETHER
+---------------------------
+This file is the "conductor" - it reads your command-line options and
+then hands the work to the other modules in order:
+
+    1. parsers.py       - reads the JSON file / detects the data type
+    2. stash_api.py     - (alternative input) fetches data from a live StashApp
+    3. converters.py    - reshapes StashApp fields into NFO fields
+    4. nfo_generator.py - writes the final NFO (XML) file
+
+NFO format references:
+- Kodi:     https://kodi.wiki/view/NFO_files
+- Jellyfin: https://jellyfin.org/docs/general/server/metadata/nfo/
 """
 
 import argparse
