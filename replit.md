@@ -10,6 +10,8 @@ Preferred communication style: Simple, everyday language.
 
 Node.js is managed with fnm (Fast Node Manager), not the Replit Node module. Node v22 is installed via `fnm` with `fnm default 22`; binaries are symlinked into `~/workspace/.config/npm/node_global/bin` and `~/.profile` runs `fnm env` for new shells.
 
+Prefer pnpm/pnpx over npm/npx for Node package work (enabled via corepack). Prefer uv for Python projects and environments (`pyproject.toml` + `uv.lock` are the source of truth), but always keep a `requirements.txt` in sync for pip compatibility — regenerate it with `make requirements` after dependency changes.
+
 ## System Architecture
 
 ### Core Components

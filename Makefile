@@ -4,7 +4,7 @@
 CYAN  := \033[36m
 RESET := \033[0m
 
-.PHONY: help clean install lint format typecheck check-docs smoke-test
+.PHONY: help clean install requirements lint format typecheck check-docs smoke-test
 
 help: ## Show this help and exit
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -20,8 +20,12 @@ clean: ## Remove cache and generated files (runs automatically before each commi
 	@echo "Clean done."
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
-install: ## Install all Python dependencies
-	pip install stashapp-tools opencv-python-headless Pillow
+install: ## Install all Python dependencies (uv preferred, pip as fallback)
+	uv sync || pip install -r requirements.txt
+
+requirements: ## Regenerate requirements.txt from uv.lock (for pip compatibility)
+	uv export --no-hashes --no-emit-project -o requirements.txt
+	@echo "requirements.txt updated."
 
 # ── Code quality ──────────────────────────────────────────────────────────────
 lint: ## Run ruff linter across all Python files
