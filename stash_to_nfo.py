@@ -6,10 +6,8 @@ Converts StashApp JSON metadata files into Kodi/Jellyfin compatible NFO files.
 
 import argparse
 import json
-import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 from parsers import StashParser
 from converters import StashToNfoConverter
@@ -303,7 +301,7 @@ Examples:
         
         # Generate NFO XML
         if args.verbose:
-            print(f"Generating NFO XML")
+            print("Generating NFO XML")
         
         generator = NfoGenerator(encoding=args.encoding, pretty_print=args.pretty)
         nfo_xml = generator.generate(nfo_data, data_type)
@@ -312,7 +310,7 @@ Examples:
         extracted_images = []
         if args.extract_images:
             if args.verbose:
-                print(f"Extracting base64 encoded images")
+                print("Extracting base64 encoded images")
             
             extracted_images = converter.extract_images(stash_data, output_path)
             if extracted_images:

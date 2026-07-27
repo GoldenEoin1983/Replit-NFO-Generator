@@ -3,8 +3,8 @@ StashApp API client for direct data retrieval.
 """
 
 import sys
-from typing import Dict, Any, Optional, List
-import stashapi.log as log
+from typing import Any
+from stashapi import log
 from stashapi.stashapp import StashInterface
 
 
@@ -12,8 +12,8 @@ class StashApiClient:
     """Client for connecting to and querying StashApp GraphQL API."""
     
     def __init__(self, host: str = "localhost", port: str = "9999", 
-                 scheme: str = "http", api_key: Optional[str] = None,
-                 username: Optional[str] = None, password: Optional[str] = None):
+                 scheme: str = "http", api_key: str | None = None,
+                 username: str | None = None, password: str | None = None):
         """
         Initialize the StashApp API client.
         
@@ -54,7 +54,7 @@ class StashApiClient:
         except Exception as e:
             raise ConnectionError(f"Cannot connect to StashApp API: {e}")
     
-    def get_scene(self, scene_id: int) -> Dict[str, Any]:
+    def get_scene(self, scene_id: int) -> dict[str, Any]:
         """
         Get scene data by ID.
         
@@ -72,7 +72,7 @@ class StashApiClient:
         except Exception as e:
             raise RuntimeError(f"Failed to fetch scene {scene_id}: {e}")
     
-    def get_performer(self, performer_id: int) -> Dict[str, Any]:
+    def get_performer(self, performer_id: int) -> dict[str, Any]:
         """
         Get performer data by ID.
         
@@ -90,7 +90,7 @@ class StashApiClient:
         except Exception as e:
             raise RuntimeError(f"Failed to fetch performer {performer_id}: {e}")
     
-    def get_gallery(self, gallery_id: int) -> Dict[str, Any]:
+    def get_gallery(self, gallery_id: int) -> dict[str, Any]:
         """
         Get gallery data by ID.
         
@@ -148,7 +148,7 @@ class StashApiClient:
         except Exception as e:
             raise RuntimeError(f"Failed to fetch gallery {gallery_id}: {e}")
     
-    def find_scene_by_path(self, file_path: str) -> Optional[Dict[str, Any]]:
+    def find_scene_by_path(self, file_path: str) -> dict[str, Any] | None:
         """
         Find scene by file path.
         
@@ -190,7 +190,7 @@ class StashApiClient:
             print(f"Warning: Could not search for scene by path: {e}", file=sys.stderr)
             return None
     
-    def search_scenes(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def search_scenes(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         """
         Search scenes by text query.
         
@@ -232,7 +232,7 @@ class StashApiClient:
         except Exception as e:
             raise RuntimeError(f"Failed to search scenes: {e}")
     
-    def get_connection_info(self) -> Dict[str, Any]:
+    def get_connection_info(self) -> dict[str, Any]:
         """Get connection information for display."""
         return {
             "host": self.config["host"],

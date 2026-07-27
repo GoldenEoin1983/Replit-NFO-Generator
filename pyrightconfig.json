@@ -1,0 +1,28 @@
+{
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "basic",
+  "include": [
+    "stash_to_nfo.py",
+    "parsers.py",
+    "converters.py",
+    "nfo_generator.py",
+    "stash_api.py",
+    "video_gallery.py",
+    "clearlogo.py",
+    "scripts"
+  ],
+  "exclude": [
+    "**/__pycache__",
+    ".pythonlibs",
+    ".local",
+    ".agents",
+    "attached_assets"
+  ],
+  "reportMissingImports": true,
+  "reportMissingModuleSource": false,
+  "reportOptionalMemberAccess": "warning",
+  "reportAttributeAccessIssue": "warning",
+  "useLibraryCodeForTypes": true,
+  "venvPath": ".",
+  "venv": ".pythonlibs"
+}

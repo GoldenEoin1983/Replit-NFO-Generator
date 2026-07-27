@@ -1,0 +1,44 @@
+.DEFAULT_GOAL := help
+
+# ── Colours ──────────────────────────────────────────────────────────────────
+CYAN  := \033[36m
+RESET := \033[0m
+
+.PHONY: help install lint format typecheck check-docs smoke-test
+
+help: ## Show this help and exit
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-16s$(RESET) %s\n", $$1, $$2}'
+
+# ── Setup ─────────────────────────────────────────────────────────────────────
+install: ## Install all Python dependencies
+	pip install stashapp-tools opencv-python-headless Pillow
+
+# ── Code quality ──────────────────────────────────────────────────────────────
+lint: ## Run ruff linter across all Python files
+	ruff check .
+
+format: ## Auto-fix and format code with ruff
+	ruff check --fix .
+	ruff format .
+
+typecheck: ## Run pyright type checker
+	pyright
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+check-docs: ## Check all Markdown files for broken links and missing file refs
+	python scripts/check_md.py
+
+# ── Smoke tests ───────────────────────────────────────────────────────────────
+smoke-test: ## Quick functional test of all three tools (no video file required)
+	@echo "--- NFO Converter ---"
+	python stash_to_nfo.py --help > /dev/null && echo "  stash_to_nfo.py OK"
+	@echo "--- Video Gallery ---"
+	python video_gallery.py --help > /dev/null && echo "  video_gallery.py OK"
+	@echo "--- ClearLogo ---"
+	python clearlogo.py "Smoke Test Title" --font bebas -o /tmp/_smoke_clearlogo.png && \
+		echo "  clearlogo.py OK" && rm -f /tmp/_smoke_clearlogo.png
+	@echo "--- NFO from sample JSON ---"
+	python stash_to_nfo.py attached_assets/Chef-At-Home.*.json /tmp/_smoke.nfo --pretty && \
+		echo "  NFO conversion OK" && rm -f /tmp/_smoke.nfo
+	@echo "All smoke tests passed."

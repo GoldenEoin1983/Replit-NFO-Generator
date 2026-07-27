@@ -3,7 +3,7 @@ NFO XML file generator for Kodi/Jellyfin compatibility.
 """
 
 import xml.etree.ElementTree as ET
-from typing import Dict, Any, List, Optional
+from typing import Any
 from xml.dom import minidom
 
 
@@ -21,7 +21,7 @@ class NfoGenerator:
         self.encoding = encoding
         self.pretty_print = pretty_print
     
-    def generate(self, nfo_data: Dict[str, Any], data_type: str) -> str:
+    def generate(self, nfo_data: dict[str, Any], data_type: str) -> str:
         """
         Generate NFO XML from converted data.
         
@@ -39,7 +39,7 @@ class NfoGenerator:
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
     
-    def _generate_movie_nfo(self, nfo_data: Dict[str, Any]) -> str:
+    def _generate_movie_nfo(self, nfo_data: dict[str, Any]) -> str:
         """Generate movie NFO XML."""
         root = ET.Element('movie')
         
@@ -111,7 +111,7 @@ class NfoGenerator:
         
         return self._format_xml(root)
     
-    def _generate_actor_nfo(self, nfo_data: Dict[str, Any]) -> str:
+    def _generate_actor_nfo(self, nfo_data: dict[str, Any]) -> str:
         """Generate actor/performer NFO XML."""
         root = ET.Element('actor')
         

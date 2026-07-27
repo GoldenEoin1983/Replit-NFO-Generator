@@ -4,13 +4,13 @@ StashApp JSON parsers for different data types.
 
 import json
 from pathlib import Path
-from typing import Dict, Any, Union
+from typing import Any
 
 
 class StashParser:
     """Parser for StashApp JSON files."""
     
-    def parse_file(self, file_path: Union[str, Path]) -> Dict[str, Any]:
+    def parse_file(self, file_path: str | Path) -> dict[str, Any]:
         """
         Parse a StashApp JSON file.
         
@@ -27,7 +27,7 @@ class StashParser:
         with open(file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     
-    def detect_type(self, data: Dict[str, Any]) -> str:
+    def detect_type(self, data: dict[str, Any]) -> str:
         """
         Auto-detect the type of StashApp data.
         
@@ -56,7 +56,7 @@ class StashParser:
         
         return 'unknown'
     
-    def validate_scene_data(self, data: Dict[str, Any]) -> bool:
+    def validate_scene_data(self, data: dict[str, Any]) -> bool:
         """
         Validate that the data contains expected scene fields.
         
@@ -69,7 +69,7 @@ class StashParser:
         # At minimum, a scene should have a title or file information
         return 'title' in data or 'file' in data
     
-    def validate_performer_data(self, data: Dict[str, Any]) -> bool:
+    def validate_performer_data(self, data: dict[str, Any]) -> bool:
         """
         Validate that the data contains expected performer fields.
         
@@ -82,7 +82,7 @@ class StashParser:
         # A performer must have a name
         return 'name' in data
     
-    def validate_gallery_data(self, data: Dict[str, Any]) -> bool:
+    def validate_gallery_data(self, data: dict[str, Any]) -> bool:
         """
         Validate that the data contains expected gallery fields.
         

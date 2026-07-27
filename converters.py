@@ -5,7 +5,7 @@ Converters for transforming StashApp data to NFO format.
 import base64
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional, Union
+from typing import Any
 
 
 class StashToNfoConverter:
@@ -13,10 +13,10 @@ class StashToNfoConverter:
     
     def __init__(self):
         """Initialize the converter."""
-        self.extracted_images: List[Dict[str, Union[str, int]]] = []
+        self.extracted_images: list[dict[str, str | int]] = []
 
-    def convert(self, stash_data: Dict[str, Any],
-                data_type: str) -> Dict[str, Any]:
+    def convert(self, stash_data: dict[str, Any],
+                data_type: str) -> dict[str, Any]:
         """
         Convert StashApp data to NFO format.
         
@@ -36,7 +36,7 @@ class StashToNfoConverter:
         else:
             raise ValueError(f"Unsupported data type: {data_type}")
 
-    def _convert_scene(self, scene_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_scene(self, scene_data: dict[str, Any]) -> dict[str, Any]:
         """Convert StashApp scene data to movie NFO format."""
         nfo_data = {}
 
@@ -101,8 +101,8 @@ class StashToNfoConverter:
 
         return nfo_data
 
-    def _convert_performer(self, performer_data: Dict[str,
-                                                      Any]) -> Dict[str, Any]:
+    def _convert_performer(self, performer_data: dict[str,
+                                                      Any]) -> dict[str, Any]:
         """Convert StashApp performer data to actor NFO format."""
         nfo_data = {}
 
@@ -137,7 +137,7 @@ class StashToNfoConverter:
 
         return nfo_data
 
-    def _convert_gallery(self, gallery_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_gallery(self, gallery_data: dict[str, Any]) -> dict[str, Any]:
         """Convert StashApp gallery data to NFO format (treated as movie)."""
         nfo_data = {}
 
@@ -184,14 +184,12 @@ class StashToNfoConverter:
         return nfo_data
 
     def _convert_performers_to_actors(
-            self, performers: List[Union[str,
-                                         Dict[str,
-                                              Any]]]) -> List[Dict[str, Any]]:
+            self, performers: list[str | dict[str, Any]]) -> list[dict[str, Any]]:
         """Convert performers list to actors format for NFO."""
         actors = []
 
         for i, performer in enumerate(performers):
-            actor: Dict[str, Any] = {'order': i}
+            actor: dict[str, Any] = {'order': i}
 
             if isinstance(performer, str):
                 actor['name'] = performer
@@ -242,7 +240,7 @@ class StashToNfoConverter:
         # If no format matches, return original string
         return date_str
 
-    def _build_performer_biography(self, performer_data: Dict[str,
+    def _build_performer_biography(self, performer_data: dict[str,
                                                               Any]) -> str:
         """Build a biography string from performer data."""
         bio_parts = []
@@ -294,7 +292,7 @@ class StashToNfoConverter:
 
         return '\n'.join(bio_parts)
     
-    def extract_images(self, stash_data: Dict[str, Any], output_path: Path) -> List[str]:
+    def extract_images(self, stash_data: dict[str, Any], output_path: Path) -> list[str]:
         """
         Extract and save base64 encoded images from StashApp data.
         
@@ -330,7 +328,7 @@ class StashToNfoConverter:
         
         return saved_images
     
-    def _save_base64_image(self, image_data: str, output_dir: Path, base_name: str, image_type: str) -> Optional[str]:
+    def _save_base64_image(self, image_data: str, output_dir: Path, base_name: str, image_type: str) -> str | None:
         """
         Save a base64 encoded image to disk.
         
@@ -377,11 +375,11 @@ class StashToNfoConverter:
             
             return filename
             
-        except Exception as e:
+        except Exception:
             # Silently skip failed image extractions
             return None
     
-    def _detect_image_format(self, image_bytes: bytes) -> Optional[str]:
+    def _detect_image_format(self, image_bytes: bytes) -> str | None:
         """
         Detect image format from file header.
         
