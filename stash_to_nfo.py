@@ -33,10 +33,75 @@ from config import load_config, get_section, apply_config_defaults
 # Config file options this tool understands (see stash-tools.toml),
 # with the value type each one expects.
 _NFO_CONFIG_TYPES = {'pretty': bool, 'extract_images': bool,
-                     'overwrite': bool, 'encoding': str}
+                     'overwrite': bool, 'encoding': str,
+                     'genre_tags': str, 'genre_parent_tag': str}
 _API_CONFIG_TYPES = {'stash_host': str, 'stash_port': str,
                      'stash_scheme': str, 'stash_api_key': str,
                      'stash_username': str, 'stash_password': str}
+
+
+def _build_genre_sets(args, stash_client):
+    """
+    Turn the genre settings into two lookup sets for the converter:
+    lower-cased tag NAMES and tag ID numbers (as strings).
+
+    Two settings feed into this:
+    - --genre-tags: names and/or IDs typed directly ("Action,Comedy,42")
+    - --genre-parent-tag: one parent tag whose children all count as
+      genres. The children live in StashApp, so this needs a server
+      connection. In API mode we reuse the existing connection; in
+      file mode we try to connect with the saved connection settings.
+
+    A failed parent lookup prints a warning and carries on - the NFO is
+    still written, just without the parent's children as genres.
+    """
+    genre_names: set[str] = set()
+    genre_ids: set[str] = set()
+
+    # Direct list: split on commas; digits are IDs, everything else names
+    if args.genre_tags:
+        for entry in args.genre_tags.split(','):
+            entry = entry.strip()
+            if not entry:
+                continue
+            if entry.isdigit():
+                genre_ids.add(entry)
+            else:
+                genre_names.add(entry.lower())
+
+    # Parent tag: look up its children in StashApp
+    if args.genre_parent_tag:
+        client = stash_client
+        try:
+            if client is None:
+                # File mode - open a connection just for this lookup
+                if args.verbose:
+                    print(f"Connecting to StashApp to look up children of "
+                          f"'{args.genre_parent_tag}'")
+                client = StashApiClient(
+                    host=args.stash_host,
+                    port=args.stash_port,
+                    scheme=args.stash_scheme,
+                    api_key=args.stash_api_key,
+                    username=args.stash_username,
+                    password=args.stash_password
+                )
+            children = client.get_tag_children(args.genre_parent_tag)
+            for child in children:
+                if child.get('name'):
+                    genre_names.add(child['name'].lower())
+                if child.get('id'):
+                    genre_ids.add(str(child['id']))
+            if args.verbose:
+                print(f"Parent tag '{args.genre_parent_tag}' has "
+                      f"{len(children)} child tag(s)")
+        except Exception as e:  # noqa: BLE001
+            print(f"Warning: could not look up children of parent tag "
+                  f"'{args.genre_parent_tag}': {e}", file=sys.stderr)
+            print("Continuing without the parent tag's genres.",
+                  file=sys.stderr)
+
+    return genre_names, genre_ids
 
 
 def main():
@@ -121,6 +186,22 @@ Examples:
         action="store_true",
         help="Extract and save base64 encoded images alongside NFO file"
     )
+
+    parser.add_argument(
+        "--genre-tags",
+        metavar="LIST",
+        help="Comma-separated tag names or ID numbers that should be "
+             "written as <genre> instead of <tag> "
+             "(e.g. \"Action,Comedy,42\")"
+    )
+
+    parser.add_argument(
+        "--genre-parent-tag",
+        metavar="TAG",
+        help="A parent tag (name or ID) whose child tags all count as "
+             "genres - looked up in StashApp, so it needs a server "
+             "connection"
+    )
     
     # StashApp API connection options
     api_group = parser.add_argument_group("StashApp API Options", "Configure connection to local StashApp instance")
@@ -183,6 +264,7 @@ Examples:
     stash_data = None
     data_source = None
     output_path = None
+    stash_client = None  # set when we connect in API mode
     
     # Handle different input methods
     if args.input_file:
@@ -340,7 +422,16 @@ Examples:
         if args.verbose:
             print(f"Converting {data_type} data to NFO format")
         
-        converter = StashToNfoConverter()
+        # Work out which tags should be treated as genres (if any).
+        # Sources: --genre-tags (names/IDs typed directly) and
+        # --genre-parent-tag (children looked up in StashApp).
+        genre_names, genre_ids = _build_genre_sets(args, stash_client)
+        if args.verbose and (genre_names or genre_ids):
+            print(f"Genre tags: {len(genre_names)} name(s), "
+                  f"{len(genre_ids)} ID(s)")
+
+        converter = StashToNfoConverter(genre_names=genre_names,
+                                        genre_ids=genre_ids)
         nfo_data = converter.convert(stash_data, data_type)
         
         # Generate NFO XML

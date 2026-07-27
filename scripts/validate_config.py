@@ -74,6 +74,8 @@ SCHEMA = {
         "extract_images": {"type": bool},
         "overwrite":      {"type": bool},
         "encoding":       {"type": str, "encoding": True},
+        "genre_tags":       {"type": str},
+        "genre_parent_tag": {"type": str},
     },
     "stash_api": {
         "stash_host":     {"type": str},

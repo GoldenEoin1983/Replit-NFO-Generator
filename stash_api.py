@@ -242,6 +242,64 @@ class StashApiClient:
         except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"Failed to search scenes: {e}")
     
+    def get_tag_children(self, parent: str) -> list[dict[str, Any]]:
+        """
+        List the child tags underneath one parent tag.
+
+        Used by the genre feature: instead of naming every genre tag,
+        the user can name ONE parent tag (e.g. "Genres") and every tag
+        filed under it counts as a genre.
+
+        Args:
+            parent: Parent tag name, or its ID number as a string
+
+        Returns:
+            List of child tag dictionaries, each with 'id' and 'name'
+        """
+        try:
+            # Step 1: turn the parent name into an ID (skip if the user
+            # already gave us digits)
+            if parent.isdigit():
+                parent_id = parent
+            else:
+                find_query = """
+                query FindTagByName($tag_filter: TagFilterType) {
+                    findTags(tag_filter: $tag_filter, filter: {per_page: 1}) {
+                        tags { id name }
+                    }
+                }
+                """
+                variables = {
+                    "tag_filter": {
+                        "name": {"value": parent, "modifier": "EQUALS"}
+                    }
+                }
+                result = self.stash.call_GQL(find_query, variables)
+                tags = result.get("findTags", {}).get("tags", [])
+                if not tags:
+                    raise ValueError(f"Parent tag '{parent}' not found in StashApp")
+                parent_id = tags[0]["id"]
+
+            # Step 2: fetch every tag whose parents include that ID
+            children_query = """
+            query FindChildTags($tag_filter: TagFilterType) {
+                findTags(tag_filter: $tag_filter, filter: {per_page: -1}) {
+                    tags { id name }
+                }
+            }
+            """
+            variables = {
+                "tag_filter": {
+                    "parents": {"value": [parent_id], "modifier": "INCLUDES"}
+                }
+            }
+            result = self.stash.call_GQL(children_query, variables)
+            return result.get("findTags", {}).get("tags", [])
+        except ValueError:
+            raise  # keep the friendly "not found" message as-is
+        except Exception as e:  # noqa: BLE001
+            raise RuntimeError(f"Failed to look up child tags of '{parent}': {e}")
+
     def get_connection_info(self) -> dict[str, Any]:
         """Get connection information for display."""
         return {

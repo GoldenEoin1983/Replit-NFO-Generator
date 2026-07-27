@@ -30,9 +30,22 @@ import requests
 class StashToNfoConverter:
     """Reshapes StashApp dictionaries into NFO-compatible dictionaries."""
 
-    def __init__(self):
-        """Set up the converter. extracted_images records what we saved."""
+    def __init__(self, genre_names: set[str] | None = None,
+                 genre_ids: set[str] | None = None):
+        """
+        Set up the converter. extracted_images records what we saved.
+
+        Args:
+            genre_names: Tag names (lower-cased) that should be written as
+                <genre> instead of <tag>. When neither this nor genre_ids
+                is given, every tag becomes BOTH <genre> and <tag>
+                (the original behaviour).
+            genre_ids: Same idea, but matching StashApp tag ID numbers
+                (kept as strings so they compare cleanly with API data).
+        """
         self.extracted_images: list[dict[str, str | int]] = []
+        self.genre_names = genre_names or set()
+        self.genre_ids = genre_ids or set()
 
     def convert(self, stash_data: dict[str, Any],
                 data_type: str) -> dict[str, Any]:
@@ -85,10 +98,14 @@ class StashToNfoConverter:
         if url:
             nfo_data['uniqueid'] = {'type': 'stash', 'value': url, 'default': True}
 
-        # StashApp 'tags' map to NFO genres
+        # StashApp 'tags' map to NFO <genre> and <tag> elements.
+        # When a genre list is configured, matching tags become <genre>
+        # and the rest become <tag>; otherwise every tag becomes both.
         tags = data.get('tags', [])
         if isinstance(tags, list):
-            nfo_data['genres'] = tags
+            genres, plain_tags = self._split_tags(tags)
+            nfo_data['genres'] = genres
+            nfo_data['tags'] = plain_tags
 
         # StashApp 'performers' map to NFO actors
         performers = data.get('performers', [])
@@ -96,6 +113,41 @@ class StashToNfoConverter:
             nfo_data['actors'] = self._convert_performers_to_actors(performers)
 
         return nfo_data
+
+    def _split_tags(self, tags: list) -> tuple[list[str], list[str]]:
+        """
+        Sort StashApp tags into (genres, plain tags).
+
+        Tags arrive either as plain strings (JSON exports) or as
+        dictionaries with 'name' and sometimes 'id' (API data) - both
+        shapes are handled here.
+
+        With no genre list configured, ALL tag names go into both lists,
+        which keeps the original "every tag is genre AND tag" output.
+        """
+        names_and_ids = []
+        for tag in tags:
+            if isinstance(tag, dict):
+                name = tag.get('name', '')
+                tag_id = str(tag.get('id', ''))
+            else:
+                name = str(tag)
+                tag_id = ''
+            if name:
+                names_and_ids.append((name, tag_id))
+
+        if not self.genre_names and not self.genre_ids:
+            all_names = [name for name, _ in names_and_ids]
+            return all_names, list(all_names)
+
+        genres, plain_tags = [], []
+        for name, tag_id in names_and_ids:
+            if (name.lower() in self.genre_names
+                    or (tag_id and tag_id in self.genre_ids)):
+                genres.append(name)
+            else:
+                plain_tags.append(name)
+        return genres, plain_tags
 
     def _convert_scene(self, scene_data: dict[str, Any]) -> dict[str, Any]:
         """Convert a StashApp scene to Kodi/Jellyfin movie NFO fields."""

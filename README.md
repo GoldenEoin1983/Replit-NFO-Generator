@@ -132,6 +132,8 @@ python stash_to_nfo.py --search "movie title" --extract-images
 | `--type` | Force type: `scene`, `performer`, `gallery`, or `auto` (default) |
 | `--pretty` | Format the XML with indentation |
 | `--extract-images` | Decode and save any base64 images found in the JSON, plus actor pictures (see below) |
+| `--genre-tags` | Comma-separated tag names or ID numbers to write as `<genre>` instead of `<tag>` (see below) |
+| `--genre-parent-tag` | A parent tag (name or ID) whose child tags all count as genres |
 | `--overwrite` | Overwrite existing files without prompting |
 | `--verbose` / `-v` | Show detailed output |
 | `--stash-id N` | Fetch data directly from StashApp by ID |
@@ -139,6 +141,26 @@ python stash_to_nfo.py --search "movie title" --extract-images
 | `--stash-host` | StashApp hostname (default: `localhost`) |
 | `--stash-port` | StashApp port (default: `9999`) |
 | `--stash-api-key` | API key for StashApp authentication |
+
+### Choosing Which Tags Become Genres
+
+By default every StashApp tag is written as **both** `<genre>` and `<tag>` in the NFO, so it shows up in either filter menu of your media center. If you'd rather keep genres tidy, you can name which tags count as genres — everything else then stays a plain `<tag>`.
+
+Two ways to do it (they can be combined):
+
+- **List them directly** — tag names and/or StashApp tag ID numbers, comma-separated. Names are matched ignoring upper/lower case.
+
+  ```bash
+  python stash_to_nfo.py scene.json --genre-tags "Action,Comedy,42"
+  ```
+
+- **Name one parent tag** — if your genre tags in Stash are all filed under a parent tag (say, one called `Genres`), just name that parent (or its ID) and every child tag counts as a genre. The children are looked up in your StashApp, so this needs the server connection settings — in file mode the tool connects briefly just for that lookup, and if it can't, it warns you and still writes the NFO.
+
+  ```bash
+  python stash_to_nfo.py --stash-id 42 --genre-parent-tag "Genres"
+  ```
+
+Both settings can also be saved in `stash-tools.toml` under `[nfo]` as `genre_tags` and `genre_parent_tag`, so you never have to type them again.
 
 ### Actor Profile Pictures (Kodi `.actors` folder)
 

@@ -113,6 +113,15 @@
 # Text encoding of the NFO file
 #encoding = "utf-8"
 
+# Tags that should be written as <genre> instead of <tag>.
+# Comma-separated tag names and/or StashApp tag ID numbers.
+#genre_tags = "Action,Comedy,42"
+
+# ...or name ONE parent tag (name or ID) and every tag filed under it
+# counts as a genre. Looked up in StashApp, so it needs the server
+# connection settings below.
+#genre_parent_tag = "Genres"
+
 
 # -----------------------------------------------------------------------------
 #  STASHAPP SERVER CONNECTION  —  [stash_api]

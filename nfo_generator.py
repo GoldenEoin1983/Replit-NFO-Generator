@@ -85,13 +85,18 @@ class NfoGenerator:
                 uniqueid_elem.set('default', 'true')
             uniqueid_elem.text = uniqueid_data.get('value', '')
 
-        # StashApp tags are written as both <genre> and <tag> so they show
-        # up in either filter menu of the media center.
+        # Genres and tags. By default the converter puts every StashApp
+        # tag in BOTH lists, so they show up in either filter menu of the
+        # media center. With a genre list configured (--genre-tags /
+        # --genre-parent-tag), the two lists are different.
         genres = [g for g in nfo_data.get('genres', []) if g]
         for genre in genres:
             self._add_text_element(root, 'genre', genre)
-        for genre in genres:
-            self._add_text_element(root, 'tag', genre)
+        # Older callers may not supply 'tags'; fall back to the genre
+        # list so the old "everything is both" output is preserved.
+        tags = [t for t in nfo_data.get('tags', genres) if t]
+        for tag in tags:
+            self._add_text_element(root, 'tag', tag)
 
         # Each performer becomes an <actor> block with name/role/order
         for actor_data in nfo_data.get('actors', []):
