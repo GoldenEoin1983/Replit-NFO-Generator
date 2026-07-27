@@ -8,6 +8,8 @@ This is a command-line tool that converts StashApp metadata into Kodi/Jellyfin c
 
 Preferred communication style: Simple, everyday language.
 
+Node.js is managed with fnm (Fast Node Manager), not the Replit Node module. Node v22 is installed via `fnm` with `fnm default 22`; binaries are symlinked into `~/workspace/.config/npm/node_global/bin` and `~/.profile` runs `fnm env` for new shells.
+
 ## System Architecture
 
 ### Core Components

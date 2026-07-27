@@ -1,1 +1,5 @@
 # gitignore rules are stored in ./gitignore — rename that file to .gitignore to activate
+
+# fnm-managed Node installs (re-downloadable, keep out of version control)
+.local/share/fnm/
+node_modules/
