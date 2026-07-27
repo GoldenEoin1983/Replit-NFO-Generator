@@ -131,7 +131,7 @@ python stash_to_nfo.py --search "movie title" --extract-images
 |---|---|
 | `--type` | Force type: `scene`, `performer`, `gallery`, or `auto` (default) |
 | `--pretty` | Format the XML with indentation |
-| `--extract-images` | Decode and save any base64 images found in the JSON |
+| `--extract-images` | Decode and save any base64 images found in the JSON, plus actor pictures (see below) |
 | `--overwrite` | Overwrite existing files without prompting |
 | `--verbose` / `-v` | Show detailed output |
 | `--stash-id N` | Fetch data directly from StashApp by ID |
@@ -139,6 +139,22 @@ python stash_to_nfo.py --search "movie title" --extract-images
 | `--stash-host` | StashApp hostname (default: `localhost`) |
 | `--stash-port` | StashApp port (default: `9999`) |
 | `--stash-api-key` | API key for StashApp authentication |
+
+### Actor Profile Pictures (Kodi `.actors` folder)
+
+When you run with `--extract-images` on a scene or gallery, performer profile pictures from Stash are also saved into a **`.actors`** folder next to the NFO — exactly where Kodi looks for local actor portraits [[K6]](#references). Files follow Kodi's naming rule: spaces in the performer's name become underscores, e.g. `William_Seed.jpg`.
+
+Pictures come from two places:
+
+- **JSON exports** — a base64 `image` embedded in the performer entry (JSON exports that only list performer *names* have no pictures, so nothing is saved).
+- **API mode** (`--stash-id` / `--search`) — the performer's `image_path` URL, downloaded straight from your running StashApp (your `--stash-api-key` is used automatically if given). For safety, downloads only happen in API mode and only from the Stash host you connected to — a JSON file can never make the tool contact other servers.
+
+```bash
+# NFO + poster/fanart + actor portraits in .actors/
+python stash_to_nfo.py --stash-id 42 --extract-images --stash-api-key YOURKEY
+```
+
+Note: Jellyfin doesn't read the `.actors` folder; it manages actor images through its own metadata system.
 
 ---
 
@@ -303,6 +319,7 @@ Fact-check sources for the Kodi/Jellyfin statements in this document. If a serve
 | K3 | Artwork size guidelines | https://kodi.wiki/view/Artwork_types#Artwork_size |
 | K4 | Movie NFO file specification | https://kodi.wiki/view/NFO_files/Movies |
 | K5 | NFO files overview (all types) | https://kodi.wiki/view/NFO_files |
+| K6 | Actor artwork — the `.actors` folder convention | https://kodi.wiki/view/Artwork_types#actor |
 
 ### Jellyfin sources
 

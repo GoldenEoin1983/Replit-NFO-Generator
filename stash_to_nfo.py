@@ -362,6 +362,26 @@ Examples:
                     print(f"Extracted {len(extracted_images)} images: {', '.join(extracted_images)}")
             elif args.verbose:
                 print("No base64 encoded images found to extract")
+
+            # Actor profile pictures: saved to a '.actors' folder next to
+            # the NFO, which is where Kodi looks for local actor portraits
+            # (named First_Last.jpg - see README references [K6])
+            if data_type in ("scene", "gallery"):
+                # URL downloads are only allowed from the StashApp host we
+                # actually connected to (API mode). File-based JSON runs
+                # never trigger downloads - base64 images still work.
+                api_mode = bool(args.stash_id or args.search)
+                actor_images = converter.extract_actor_images(
+                    stash_data, output_path,
+                    api_key=args.stash_api_key,
+                    allowed_host=args.stash_host if api_mode else None)
+                if actor_images:
+                    extracted_images.extend(actor_images)
+                    if args.verbose:
+                        print(f"Saved {len(actor_images)} actor picture(s): "
+                              f"{', '.join(actor_images)}")
+                elif args.verbose:
+                    print("No performer pictures found to save")
         
         # Write output file
         if args.verbose:

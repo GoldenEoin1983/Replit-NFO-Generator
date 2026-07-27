@@ -18,9 +18,13 @@ Key jobs:
 """
 
 import base64
+import binascii
 from datetime import datetime
 from pathlib import Path
 from typing import Any, ClassVar
+from urllib.parse import urlparse
+
+import requests
 
 
 class StashToNfoConverter:
@@ -297,6 +301,123 @@ class StashToNfoConverter:
                     saved_images.append(saved_file)
 
         return saved_images
+
+    def extract_actor_images(self, stash_data: dict[str, Any],
+                             output_path: Path,
+                             api_key: str | None = None,
+                             allowed_host: str | None = None) -> list[str]:
+        """
+        Save each performer's profile picture into a '.actors' folder
+        next to the NFO - the place Kodi looks for local actor portraits.
+
+        Kodi's convention: <movie folder>/.actors/First_Last.jpg
+        (spaces in the name become underscores). See:
+        - https://kodi.wiki/view/Artwork_types#actor
+
+        Two picture sources are supported, in this order:
+        - 'image'      : base64 image embedded in exported JSON
+        - 'image_path' : URL served by a running StashApp (API mode);
+                         downloaded with the API key when one is given.
+                         For safety, URLs are only downloaded when
+                         allowed_host is set AND the URL points at that
+                         host - so a crafted JSON file can't make the
+                         tool contact arbitrary servers.
+
+        Performers stored as plain name strings have no picture, so
+        they are skipped quietly.
+
+        Args:
+            stash_data: Parsed StashApp scene/gallery data
+            output_path: Path of the NFO file ('.actors' goes beside it)
+            api_key: Optional StashApp API key for downloading images
+
+        Returns:
+            List of image paths (relative to the NFO) that were saved
+        """
+        performers = stash_data.get('performers', [])
+        if not isinstance(performers, list):
+            return []
+
+        saved = []
+        actors_dir = output_path.parent / '.actors'
+
+        for performer in performers:
+            if not isinstance(performer, dict):
+                continue  # plain name string - no picture available
+            name = performer.get('name', '')
+            if not name:
+                continue
+
+            image_bytes = self._get_performer_image_bytes(
+                performer, api_key, allowed_host)
+            if not image_bytes:
+                continue
+
+            image_format = self._detect_image_format(image_bytes)
+            if not image_format:
+                continue  # not a recognisable image - skip it
+
+            # Kodi naming rule: spaces become underscores.
+            # Also strip path separators so a strange name can't
+            # write outside the .actors folder.
+            safe_name = name.replace(' ', '_').replace('/', '-').replace('\\', '-')
+            filename = f"{safe_name}.{image_format}"
+            try:
+                actors_dir.mkdir(exist_ok=True)
+                with open(actors_dir / filename, 'wb') as f:
+                    f.write(image_bytes)
+            except OSError:
+                continue  # can't write this file - don't stop the rest
+
+            saved.append(f".actors/{filename}")
+            self.extracted_images.append({
+                'type': 'actor',
+                'filename': f".actors/{filename}",
+                'size': len(image_bytes),
+            })
+
+        return saved
+
+    def _get_performer_image_bytes(self, performer: dict[str, Any],
+                                   api_key: str | None,
+                                   allowed_host: str | None) -> bytes | None:
+        """
+        Get one performer's picture as raw bytes, from either the
+        embedded base64 'image' or by downloading 'image_path'.
+
+        URL downloads are only attempted when allowed_host is given and
+        the URL's hostname matches it exactly. This stops a crafted JSON
+        file from making the tool contact servers we never connected to.
+
+        Returns None when there is no picture or fetching failed
+        (a missing portrait should never stop the conversion).
+        """
+        # Source 1: base64 image embedded in the JSON
+        image_data = performer.get('image')
+        if isinstance(image_data, str) and image_data:
+            try:
+                if image_data.startswith('data:'):
+                    image_data = image_data.split(',', 1)[1]
+                return base64.b64decode(image_data)
+            except (ValueError, binascii.Error):
+                return None
+
+        # Source 2: URL served by the StashApp we connected to
+        image_url = performer.get('image_path')
+        if (allowed_host
+                and isinstance(image_url, str)
+                and image_url.startswith(('http://', 'https://'))):
+            try:
+                if urlparse(image_url).hostname != allowed_host:
+                    return None  # URL points somewhere else - refuse it
+                headers = {'ApiKey': api_key} if api_key else {}
+                response = requests.get(image_url, headers=headers, timeout=30)
+                response.raise_for_status()
+                return response.content
+            except (ValueError, requests.RequestException):
+                return None
+
+        return None
 
     def _save_base64_image(self, image_data: str, output_dir: Path,
                            base_name: str, image_type: str) -> str | None:
