@@ -124,7 +124,7 @@ def check_file(path: Path, fix: bool = False) -> int:
     """Run all checks on one file. Returns number of issues found."""
     try:
         content = path.read_text(encoding="utf-8")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"{path}: ERROR reading file — {e}")
         return 1
 

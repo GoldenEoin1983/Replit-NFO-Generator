@@ -197,7 +197,7 @@ Examples:
                     try:
                         stash_data = stash_client.get_scene(stash_id)
                         data_type = "scene"
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         if data_type == "scene":
                             print(f"Error: {e}", file=sys.stderr)
                             sys.exit(1)
@@ -206,7 +206,7 @@ Examples:
                     try:
                         stash_data = stash_client.get_performer(stash_id)
                         data_type = "performer"
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         if data_type == "performer":
                             print(f"Error: {e}", file=sys.stderr)
                             sys.exit(1)
@@ -215,7 +215,7 @@ Examples:
                     try:
                         stash_data = stash_client.get_gallery(stash_id)
                         data_type = "gallery"
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         if data_type == "gallery":
                             print(f"Error: {e}", file=sys.stderr)
                             sys.exit(1)
@@ -260,7 +260,7 @@ Examples:
                 safe_title = safe_title.replace(" ", "_")
                 output_path = Path(f"{safe_title}.nfo")
         
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Error connecting to StashApp: {e}", file=sys.stderr)
             sys.exit(1)
     
@@ -346,7 +346,7 @@ Examples:
         print(f"Error: Permission denied: {e}", file=sys.stderr)
         sys.exit(1)
     
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Error: Unexpected error occurred: {e}", file=sys.stderr)
         if args.verbose:
             import traceback

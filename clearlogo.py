@@ -78,7 +78,7 @@ def _strip_edges(s: str) -> str:
 
 
 def clean_title(title: str, filter_years: bool = False,
-                filter_actors: list = None) -> str:
+                filter_actors: list | None = None) -> str:
     """
     Return a cleaned version of the title.
 
@@ -175,7 +175,7 @@ def generate_clearlogo(title: str, font_key: str = "bebas",
                        width: int = DEFAULT_WIDTH,
                        height: int = DEFAULT_HEIGHT,
                        padding: int = DEFAULT_PAD,
-                       output_path: str = None,
+                       output_path: str | None = None,
                        verbose: bool = False) -> str:
     """
     Render a clearlogo PNG with transparent background.
@@ -396,7 +396,7 @@ Examples:
     except (FileNotFoundError, ValueError, RuntimeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Unexpected error: {e}", file=sys.stderr)
         if args.verbose:
             import traceback

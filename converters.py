@@ -61,8 +61,7 @@ class StashToNfoConverter:
         if date_str:
             nfo_data['premiered'] = self._convert_date(date_str)
             try:
-                year = datetime.strptime(date_str, '%Y-%m-%d').year
-                nfo_data['year'] = year
+                nfo_data['year'] = int(date_str[:4])
             except (ValueError, TypeError):
                 pass
 
@@ -151,8 +150,7 @@ class StashToNfoConverter:
         if date_str:
             nfo_data['premiered'] = self._convert_date(date_str)
             try:
-                year = datetime.strptime(date_str, '%Y-%m-%d').year
-                nfo_data['year'] = year
+                nfo_data['year'] = int(date_str[:4])
             except (ValueError, TypeError):
                 pass
 
@@ -230,7 +228,7 @@ class StashToNfoConverter:
 
         for fmt in date_formats:
             try:
-                dt = datetime.strptime(
+                dt = datetime.strptime(  # noqa: DTZ007
                     date_str.split('T')[0],
                     fmt.split('T')[0])
                 return dt.strftime('%Y-%m-%d')
@@ -375,7 +373,7 @@ class StashToNfoConverter:
             
             return filename
             
-        except Exception:
+        except Exception:  # noqa: BLE001
             # Silently skip failed image extractions
             return None
     
@@ -397,7 +395,7 @@ class StashToNfoConverter:
             return 'jpg'
         elif image_bytes.startswith(b'\x89PNG\r\n\x1a\n'):
             return 'png'
-        elif image_bytes.startswith(b'GIF87a') or image_bytes.startswith(b'GIF89a'):
+        elif image_bytes.startswith((b'GIF87a', b'GIF89a')):
             return 'gif'
         elif image_bytes.startswith(b'RIFF') and b'WEBP' in image_bytes[:12]:
             return 'webp'

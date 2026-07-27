@@ -8,6 +8,7 @@ or combines them into an animated GIF or animated WebP.
 import argparse
 import sys
 from pathlib import Path
+from typing import ClassVar
 
 
 def parse_size(size_str: str):
@@ -72,19 +73,19 @@ def clamp(value, lo, hi):
 class VideoGalleryGenerator:
     """Extracts frames from a video and saves them as images or animations."""
 
-    STILL_FORMATS = {
+    STILL_FORMATS: ClassVar[dict[str, tuple[str, str]]] = {
         "jpg":  (".jpg",  "JPEG"),
         "jpeg": (".jpg",  "JPEG"),
         "png":  (".png",  "PNG"),
         "webp": (".webp", "WEBP"),
     }
 
-    ANIM_FORMATS = {
+    ANIM_FORMATS: ClassVar[dict[str, tuple[str, str]]] = {
         "gif":  (".gif",  "GIF"),
         "webp": (".webp", "WEBP"),
     }
 
-    def __init__(self, video_path: str, output_dir: str = None, prefix: str = None,
+    def __init__(self, video_path: str, output_dir: str | None = None, prefix: str | None = None,
                  fmt: str = "jpg", quality: int = 85, size=None, verbose: bool = False):
         self.video_path = Path(video_path)
         if not self.video_path.exists():
@@ -178,9 +179,9 @@ class VideoGalleryGenerator:
     # ------------------------------------------------------------------
     # Public: still images
     # ------------------------------------------------------------------
-    def generate(self, count: int = None, interval: float = None,
+    def generate(self, count: int | None = None, interval: float | None = None,
                  start_percent: float = 0.0, end_percent: float = 100.0,
-                 start_time: float = None, end_time: float = None) -> list:
+                 start_time: float | None = None, end_time: float | None = None) -> list:
         """
         Extract frames and save as individual image files.
 
@@ -230,9 +231,9 @@ class VideoGalleryGenerator:
     # ------------------------------------------------------------------
     # Public: animated GIF or animated WebP
     # ------------------------------------------------------------------
-    def animate(self, count: int = None, interval: float = None,
+    def animate(self, count: int | None = None, interval: float | None = None,
                 start_percent: float = 0.0, end_percent: float = 100.0,
-                start_time: float = None, end_time: float = None,
+                start_time: float | None = None, end_time: float | None = None,
                 frame_duration: int = 500, loop: int = 0) -> str:
         """
         Extract frames and combine them into a single animated GIF or animated WebP.
@@ -451,9 +452,8 @@ Examples:
         parser.error("--start must be between 0 and 100")
     if not 0 <= args.end <= 100:
         parser.error("--end must be between 0 and 100")
-    if args.start_time is None and args.end_time is None:
-        if args.start >= args.end:
-            parser.error("--start must be less than --end")
+    if args.start_time is None and args.end_time is None and args.start >= args.end:
+        parser.error("--start must be less than --end")
     if args.frame_duration < 1:
         parser.error("--frame-duration must be at least 1 millisecond")
     if args.animate and args.format not in ("gif", "webp"):
@@ -505,7 +505,7 @@ Examples:
     except (ValueError, RuntimeError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Unexpected error: {e}", file=sys.stderr)
         if args.verbose:
             import traceback

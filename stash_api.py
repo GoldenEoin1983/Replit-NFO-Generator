@@ -43,7 +43,7 @@ class StashApiClient:
             self.stash = StashInterface(self.config)
             # Test connection
             self._test_connection()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise ConnectionError(f"Failed to connect to StashApp at {scheme}://{host}:{port} - {e}")
     
     def _test_connection(self):
@@ -51,7 +51,7 @@ class StashApiClient:
         try:
             # Try to get system status to verify connection
             self.stash.call_GQL("query { version { version } }")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise ConnectionError(f"Cannot connect to StashApp API: {e}")
     
     def get_scene(self, scene_id: int) -> dict[str, Any]:
@@ -69,7 +69,7 @@ class StashApiClient:
             if not scene_data:
                 raise ValueError(f"Scene with ID {scene_id} not found")
             return scene_data
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"Failed to fetch scene {scene_id}: {e}")
     
     def get_performer(self, performer_id: int) -> dict[str, Any]:
@@ -87,7 +87,7 @@ class StashApiClient:
             if not performer_data:
                 raise ValueError(f"Performer with ID {performer_id} not found")
             return performer_data
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"Failed to fetch performer {performer_id}: {e}")
     
     def get_gallery(self, gallery_id: int) -> dict[str, Any]:
@@ -145,7 +145,7 @@ class StashApiClient:
                 raise ValueError(f"Gallery with ID {gallery_id} not found")
             
             return result["findGallery"]
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"Failed to fetch gallery {gallery_id}: {e}")
     
     def find_scene_by_path(self, file_path: str) -> dict[str, Any] | None:
@@ -186,7 +186,7 @@ class StashApiClient:
                 return self.get_scene(int(scenes[0]["id"]))
             
             return None
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Warning: Could not search for scene by path: {e}", file=sys.stderr)
             return None
     
@@ -229,7 +229,7 @@ class StashApiClient:
             
             result = self.stash.call_GQL(search_query, variables)
             return result.get("findScenes", {}).get("scenes", [])
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             raise RuntimeError(f"Failed to search scenes: {e}")
     
     def get_connection_info(self) -> dict[str, Any]:

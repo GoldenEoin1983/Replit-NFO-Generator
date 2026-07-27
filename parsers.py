@@ -38,9 +38,8 @@ class StashParser:
             Detected type: 'scene', 'performer', 'gallery', or 'unknown'
         """
         # Check for scene-specific fields
-        if any(key in data for key in ['file', 'duration', 'performers']):
-            if 'file' in data and isinstance(data['file'], dict):
-                return 'scene'
+        if any(key in data for key in ['file', 'duration', 'performers']) and 'file' in data and isinstance(data['file'], dict):
+            return 'scene'
         
         # Check for performer-specific fields
         if any(key in data for key in ['gender', 'birthdate', 'ethnicity', 'measurements']):

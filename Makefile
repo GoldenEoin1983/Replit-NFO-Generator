@@ -1,14 +1,23 @@
 .DEFAULT_GOAL := help
 
-# ── Colours ──────────────────────────────────────────────────────────────────
+# ── Colours ───────────────────────────────────────────────────────────────────
 CYAN  := \033[36m
 RESET := \033[0m
 
-.PHONY: help install lint format typecheck check-docs smoke-test
+.PHONY: help clean install lint format typecheck check-docs smoke-test
 
 help: ## Show this help and exit
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-16s$(RESET) %s\n", $$1, $$2}'
+
+# ── Cleanup ───────────────────────────────────────────────────────────────────
+clean: ## Remove cache and generated files (runs automatically before each commit)
+	find . -type d -name "__pycache__" ! -path "./.git/*" -exec rm -rf {} + 2>/dev/null || true
+	find . \( -name "*.pyc" -o -name "*.pyo" -o -name "*.pyd" \) ! -path "./.git/*" -delete 2>/dev/null || true
+	find . -maxdepth 4 -name "*.nfo" ! -name "example_output.nfo" ! -path "./.git/*" -delete 2>/dev/null || true
+	find . -maxdepth 4 \( -name "*-clearlogo.png" -o -name "*.gif" \) ! -path "./.git/*" -delete 2>/dev/null || true
+	rm -rf .ruff_cache .pyright 2>/dev/null || true
+	@echo "Clean done."
 
 # ── Setup ─────────────────────────────────────────────────────────────────────
 install: ## Install all Python dependencies
