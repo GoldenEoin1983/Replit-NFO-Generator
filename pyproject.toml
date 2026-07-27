@@ -1,10 +1,27 @@
 [project]
-name = "repl-nix-workspace"
+name = "stashapp-media-toolkit"
 version = "0.1.0"
-description = "Add your description here"
+description = "Convert StashApp metadata to Kodi/Jellyfin NFO files, extract video gallery frames, and generate clearlogos"
+readme = "README.md"
 requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["stashapp", "kodi", "jellyfin", "nfo", "media", "clearlogo"]
+
 dependencies = [
     "stashapp-tools>=0.2.58",
     "opencv-python-headless>=4.0",
     "Pillow>=9.0",
 ]
+
+[project.scripts]
+stash-to-nfo    = "stash_to_nfo:main"
+video-gallery   = "video_gallery:main"
+clearlogo       = "clearlogo:main"
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
