@@ -1,6 +1,6 @@
 # StashApp to NFO Converter
 
-A command-line tool that converts StashApp JSON metadata files into Kodi/Jellyfin compatible NFO files.
+A command-line tool that converts StashApp JSON metadata files into Kodi/Jellyfin compatible NFO files, extracts images, and generates image galleries or animated previews from video files.
 
 ## Features
 
@@ -8,14 +8,24 @@ A command-line tool that converts StashApp JSON metadata files into Kodi/Jellyfi
 - **Auto-Detection**: Automatically detects the type of StashApp data
 - **Kodi/Jellyfin Compatible**: Generates properly formatted NFO files with UTF-8 encoding
 - **Field Mapping**: Maps StashApp fields to appropriate NFO XML tags
+- **Base64 Image Extraction**: Decodes and saves embedded images from StashApp JSON
+- **Direct API Integration**: Connects directly to your local StashApp instance
+- **Video Gallery Generator**: Extracts still frames or creates animated GIF/WebP previews from video files
 - **Error Handling**: Comprehensive error handling for invalid files and operations
-- **Flexible Output**: Configurable output formatting and encoding
 
 ## Installation
 
-No installation required. Just ensure you have Python 3.6+ installed.
+Requires Python 3.6+. Install dependencies with:
 
-## Usage
+```bash
+pip install stashapp-tools opencv-python-headless Pillow
+```
+
+---
+
+## NFO Converter — `stash_to_nfo.py`
+
+Converts StashApp metadata to Kodi/Jellyfin NFO files.
 
 ### Basic Usage
 
@@ -31,3 +41,174 @@ python stash_to_nfo.py --type performer performer.json
 
 # Convert gallery data
 python stash_to_nfo.py --type gallery gallery.json
+
+# Extract embedded images alongside the NFO
+python stash_to_nfo.py scene.json --extract-images --pretty
+
+# Query your StashApp directly by ID
+python stash_to_nfo.py --stash-id 42 --stash-api-key YOUR_KEY
+
+# Search your StashApp and convert the first result
+python stash_to_nfo.py --search "movie title" --extract-images
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--type` | Force type: `scene`, `performer`, `gallery`, or `auto` (default) |
+| `--pretty` | Format the XML with indentation |
+| `--extract-images` | Decode and save any base64 images found in the JSON |
+| `--overwrite` | Overwrite existing files without prompting |
+| `--verbose` / `-v` | Show detailed output |
+| `--stash-id N` | Fetch data directly from StashApp by ID |
+| `--search TEXT` | Search StashApp and convert the first result |
+| `--stash-host` | StashApp hostname (default: `localhost`) |
+| `--stash-port` | StashApp port (default: `9999`) |
+| `--stash-api-key` | API key for StashApp authentication |
+
+---
+
+## Video Gallery Generator — `video_gallery.py`
+
+Extracts frames from a video file as individual still images, or combines them into an **animated GIF** or **animated WebP** preview.
+
+### Still Image Examples
+
+```bash
+# 24 JPG frames spread evenly across the whole video
+python video_gallery.py movie.mp4 --count 24
+
+# One frame every 30 seconds, saved as PNG
+python video_gallery.py movie.mp4 --interval 30 --format png
+
+# 12 WebP frames from the middle section (skip first/last 20%)
+python video_gallery.py movie.mp4 --count 12 --start 20 --end 80 --format webp
+
+# 10 frames from a specific time window
+python video_gallery.py movie.mp4 --count 10 --start-time 0:05:00 --end-time 0:45:00
+
+# Half-size JPGs saved to a separate folder
+python video_gallery.py movie.mp4 --interval 60 --size 50% --output ./gallery
+```
+
+### Animated GIF / WebP Examples
+
+```bash
+# Animated GIF — 16 frames, each shown for 400ms
+python video_gallery.py movie.mp4 --count 16 --format gif --animate --frame-duration 400
+
+# Animated WebP — one frame every 30s, 600ms per frame, half-size
+python video_gallery.py movie.mp4 --interval 30 --format webp --animate --frame-duration 600 --size 50%
+
+# Animated WebP skipping intro and credits, looping 3 times
+python video_gallery.py movie.mp4 --count 12 --format webp --animate --start 5 --end 95 --loop 3
+
+# Animated GIF from a specific time range
+python video_gallery.py movie.mp4 --count 10 --format gif --animate --start-time 5:00 --end-time 20:00
+```
+
+### All Options
+
+| Option | Description |
+|---|---|
+| `--count N` / `-n N` | Extract exactly N frames, evenly spaced |
+| `--interval SECS` / `-i SECS` | One frame every N seconds |
+| `--start PERCENT` | Start at this % of the video (default: 0) |
+| `--end PERCENT` | End at this % of the video (default: 100) |
+| `--start-time TIME` | Start at a timestamp: `90`, `1:30`, or `0:01:30` |
+| `--end-time TIME` | End at a timestamp |
+| `--format FORMAT` | `jpg`, `png`, `webp` for stills; `gif` or `webp` for animated |
+| `--quality 1-100` | Quality for jpg/webp (default: 85, ignored for png/gif) |
+| `--size SIZE` | Resize: `1920x1080` or `50%` |
+| `--animate` | Combine frames into one animated file (requires `gif` or `webp` format) |
+| `--frame-duration MS` | How long each frame shows in the animation, in milliseconds (default: 500) |
+| `--loop N` | Times to loop animation; `0` = loop forever (default: 0) |
+| `--output DIR` | Output directory (default: same folder as the video) |
+| `--prefix NAME` | Filename prefix (default: video filename) |
+| `--verbose` / `-v` | Show detailed progress |
+
+---
+
+## Animated Images — Kodi & Jellyfin Guide
+
+### Jellyfin
+
+Jellyfin has **full native support** for both animated GIF and animated WebP across all official clients (Web, Android, Desktop). Animated images work as posters, backdrops, and thumbnails with no extra configuration needed.
+
+**Recommended for Jellyfin:** Animated WebP — better quality and much smaller file sizes than GIF.
+
+### Kodi
+
+Kodi supports animated GIF and animated WebP, but behaviour depends on which **skin** you are using.
+
+- **Animated GIF**: Supported in the core engine, but many skins (including the default *Estuary*) only display the first frame as a static image in list views. Animated playback is more reliable in full-screen fanart views.
+- **Animated WebP**: Supported from **Kodi 19 (Matrix)** onwards. Requires skin support for the animation to play. Kodi 20 (Nexus) and later have the most reliable WebP handling.
+- **Older Kodi (pre-19)**: WebP is not supported. Use GIF or static images instead.
+
+**Recommended for Kodi:** Keep animated images as supplementary fanart rather than primary posters, to ensure compatibility across skins and devices.
+
+### Format Comparison
+
+| | Animated GIF | Animated WebP |
+|---|---|---|
+| **Jellyfin support** | Full | Full |
+| **Kodi 20+ support** | Full (skin-dependent) | Full (skin-dependent) |
+| **Kodi 19 support** | Full (skin-dependent) | Partial |
+| **Kodi pre-19** | Full (skin-dependent) | Not supported |
+| **Color depth** | 256 colours per frame | Full colour (24-bit) |
+| **File size** | Large | Much smaller |
+| **Transparency** | Limited (1-bit) | Full alpha |
+
+### Size Recommendations
+
+These sizes match the standard naming conventions expected by Kodi and Jellyfin:
+
+| Artwork type | Recommended size | Aspect ratio | Notes |
+|---|---|---|---|
+| **Poster** | 1000 × 1500 px | 2:3 | Main library image |
+| **Fanart / Backdrop** | 1920 × 1080 px | 16:9 | Background image |
+| **Thumbnail** | 1280 × 720 px | 16:9 | Scene/episode preview |
+
+For animated images, **smaller sizes are strongly recommended** to keep file sizes manageable. A 1920×1080 animated GIF with 20 frames can easily exceed 50 MB, which will slow down your media centre UI — especially on low-power devices like a Raspberry Pi.
+
+**Practical size guidance for animations:**
+
+| Use case | Suggested `--size` |
+|---|---|
+| Fast/responsive UI | `640x360` or `50%` |
+| Balanced quality | `1280x720` or `75%` |
+| High quality (fast machine) | `1920x1080` |
+
+### Number of Frames
+
+The number of frames directly affects file size and how smooth the animation looks.
+
+| Frame count | Result |
+|---|---|
+| **6–10** | Very small file; works well as a quick slideshow preview |
+| **12–20** | Good balance — recommended for most use cases |
+| **20–30** | Smooth animation; larger file, best used with WebP |
+| **30+** | Very large file; may cause UI lag on slower hardware |
+
+**Tip:** Animated WebP can handle more frames at a reasonable file size compared to GIF.
+
+### Frame Duration
+
+`--frame-duration` controls how long each frame is displayed, in **milliseconds**.
+
+| Duration | Effect |
+|---|---|
+| `100–200 ms` | Fast motion preview (~5–10 fps) |
+| `300–500 ms` | Natural-feeling slideshow — **recommended default** |
+| `600–1000 ms` | Slow slideshow, good for reading titles or detail |
+| `1000+ ms` | Very slow; one frame per second or slower |
+
+**Example:** `--count 12 --frame-duration 400` gives a 4.8-second animation that loops continuously.
+
+### Performance Notes
+
+- **Animated WebP is always preferable to GIF** when Jellyfin or a modern Kodi version is your target. It produces dramatically smaller files at equal or better quality.
+- Large animated files can make your media centre UI feel sluggish, particularly on embedded or older devices.
+- If you experience slowdowns, reduce `--size` first, then reduce `--count`.
+- For Kodi, consider placing animated images in the `extrafanart` folder as supplementary artwork rather than replacing the primary poster, so the library still loads quickly.
