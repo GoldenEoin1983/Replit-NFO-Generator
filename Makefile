@@ -4,7 +4,7 @@
 CYAN  := \033[36m
 RESET := \033[0m
 
-.PHONY: help clean install requirements lint format typecheck check-docs smoke-test
+.PHONY: help clean install requirements lint format typecheck check-docs check-config validate-config smoke-test
 
 help: ## Show this help and exit
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -55,3 +55,10 @@ smoke-test: ## Quick functional test of all three tools (no video file required)
 	python stash_to_nfo.py attached_assets/Chef-At-Home.*.json /tmp/_smoke.nfo --pretty && \
 		echo "  NFO conversion OK" && rm -f /tmp/_smoke.nfo
 	@echo "All smoke tests passed."
+
+# ── Config checks ─────────────────────────────────────────────────────────────
+check-config: ## Verify every CLI option is covered by the config system
+	python scripts/check_config_coverage.py
+
+validate-config: ## Validate a filled-in config file (FILE=path, default stash-tools.toml)
+	python scripts/validate_config.py $(FILE)

@@ -25,6 +25,8 @@ typeCheckingMode = "basic"
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+# Skip downloaded/third-party folders (agent skills, caches)
+extend-exclude = [".agents", ".cache", ".local"]
 
 [tool.ruff.lint]
 ignore = [

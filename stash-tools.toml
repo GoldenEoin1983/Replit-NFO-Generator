@@ -124,3 +124,8 @@
 #stash_port = "9999"
 #stash_scheme = "http"
 #stash_api_key = ""
+
+# Username/password login (alternative to the API key).
+# Really do avoid saving the password here if you share this project.
+#stash_username = ""
+#stash_password = ""

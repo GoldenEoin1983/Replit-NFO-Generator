@@ -61,6 +61,39 @@ You can also keep several configs (say, one per show) and pick one with `--confi
 python video_gallery.py movie.mp4 --config myshow.toml
 ```
 
+### Checking Your Config File
+
+Two helper scripts keep the config system healthy — both print what's wrong and exit with code 1 on failure, so they're safe to use in scripts too.
+
+**1. Validate your filled-in config** — run this after editing `stash-tools.toml` to catch typos, wrong value types, and out-of-range values before they cause confusing errors mid-run:
+
+```bash
+# Check the default stash-tools.toml
+make validate-config
+# ...or any other config file
+make validate-config FILE=myshow.toml
+# ...or call the script directly
+python scripts/validate_config.py myshow.toml
+```
+
+Example output for a broken file:
+
+```
+myshow.toml: 3 problem(s) found:
+
+  - [gallery] quality: should be a whole number, but got '85'
+  - [clearlogo] font: 'arial' is not one of: "bebas", "anton", "montserrat"
+  - [gallery]: both 'count' and 'interval' are set - pick one (if you keep both, count wins)
+```
+
+**2. Check config coverage** — mainly for anyone changing the code: verifies that every command-line option either has a matching config option or is deliberately command-line only, and that the sample `stash-tools.toml` documents every setting. Run it after adding, renaming, or removing an option:
+
+```bash
+make check-config
+# ...or directly
+python scripts/check_config_coverage.py
+```
+
 ---
 
 ## NFO Converter — `stash_to_nfo.py`

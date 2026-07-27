@@ -32,9 +32,13 @@ def find_md_files(paths: list[Path]) -> list[Path]:
 
 def _skip(path: Path) -> bool:
     """Return True if this file should be skipped."""
-    skip_dirs = {".git", ".local", ".agents", "__pycache__", ".pythonlibs", "node_modules"}
+    skip_dirs = {"__pycache__", "node_modules"}
     skip_files = {"replit.md"}
-    return any(part in skip_dirs for part in path.parts) or path.name in skip_files
+    # Skip anything inside a hidden folder (.git, .cache, .local, ...) too
+    hidden = any(part.startswith(".") for part in path.parent.parts)
+    return (hidden
+            or any(part in skip_dirs for part in path.parts)
+            or path.name in skip_files)
 
 
 # ── Checks ────────────────────────────────────────────────────────────────────
